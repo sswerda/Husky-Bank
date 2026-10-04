@@ -415,15 +415,28 @@
   });
 
   document.getElementById('quickDepositBtn').addEventListener('click',()=>{
-    const id=Number(document.getElementById('quickId').value);
-    const amt=Number(document.getElementById('quickAmount').value);
+    const idInput=document.getElementById('quickId');
+    const amountInput=document.getElementById('quickAmount');
+    const id=Number(idInput.value);
+    const amt=Number(amountInput.value);
     const s=studentById(id);
-    if(!s){ alert('Student number not found.'); return; }
-    if(!Number.isFinite(amt)||amt<0){ alert('Enter a valid deposit amount.'); return; }
+    if(!s){ alert('Student number not found.'); idInput.focus(); return; }
+    if(!Number.isFinite(amt)||amt<0){ alert('Enter a valid deposit amount.'); amountInput.focus(); return; }
     s.bank+=amt;
     log(id,'deposit',amt,'Quick deposit');
-    document.getElementById('quickAmount').value='';
+    amountInput.value='';
+    idInput.value='';
     save();
+    idInput.focus();
+  });
+
+  ['quickId','quickAmount'].forEach(inputId=>{
+    document.getElementById(inputId).addEventListener('keydown',e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        document.getElementById('quickDepositBtn').click();
+      }
+    });
   });
 
   document.getElementById('addStudentBtn').addEventListener('click',()=>{
