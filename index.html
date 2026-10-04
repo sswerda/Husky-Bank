@@ -80,23 +80,99 @@
     #printArea{display:block!important;position:absolute;left:0;top:0;width:100%;padding:.25in;background:#fff}
     .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:.18in}
     .debit-card{
-      border:2px solid #000;
-      border-radius:14px;
-      height:2.25in;
-      padding:.18in;
+      border:2.5px solid #000;
+      border-radius:22px;
+      min-height:2.35in;
+      padding:.16in .18in;
       page-break-inside:avoid;
       display:flex;
       flex-direction:column;
       justify-content:space-between;
+      align-items:center;
       background:#fff;
       color:#000;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
     }
-    .debit-top{display:flex;justify-content:space-between;align-items:flex-start}
-    .debit-title{font-size:20px;font-weight:900;color:#000}
-    .paw{font-size:28px;color:#000}
-    .debit-student{font-size:22px;font-weight:900}
-    .debit-amount{font-size:34px;font-weight:950;color:#000}
-    .debit-footer{font-size:11px;color:#000}
+    .debit-card::before{
+      content:"★";
+      position:absolute;
+      left:12px;
+      top:9px;
+      font-size:13px;
+    }
+    .debit-card::after{
+      content:"★";
+      position:absolute;
+      right:12px;
+      top:9px;
+      font-size:13px;
+    }
+    .debit-top{
+      width:100%;
+      border-bottom:2px dashed #000;
+      padding-bottom:.07in;
+      margin-bottom:.06in;
+    }
+    .debit-title{
+      font-size:19px;
+      font-weight:950;
+      color:#000;
+      letter-spacing:.5px;
+      line-height:1.05;
+    }
+    .debit-subtitle{
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:1.4px;
+      margin-top:2px;
+    }
+    .debit-paws{
+      font-size:15px;
+      letter-spacing:5px;
+      margin:4px 0 2px;
+    }
+    .debit-label{
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      margin-top:2px;
+    }
+    .debit-student{
+      font-size:24px;
+      font-weight:950;
+      margin:2px 0 7px;
+    }
+    .debit-amount{
+      font-size:30px;
+      font-weight:950;
+      color:#000;
+      margin:2px 0 9px;
+    }
+    .debit-balance-box{
+      width:100%;
+      border:2px solid #000;
+      border-radius:14px;
+      padding:8px 10px;
+      font-size:16px;
+      font-weight:900;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      background:#fff;
+    }
+    .debit-footer{
+      width:100%;
+      font-size:10px;
+      color:#000;
+      border-top:1.5px dashed #000;
+      padding-top:.06in;
+      margin-top:.06in;
+      line-height:1.2;
+    }
   }
 
   @media (max-width:900px){.main{grid-template-columns:1fr}}
@@ -272,15 +348,25 @@
     cards.innerHTML=students.map((s)=>`
       <div class="debit-card">
         <div class="debit-top">
-          <div class="debit-title">HUSKY BANK<br>DEBIT CARD</div>
-          <div class="paw">🐾</div>
+          <div class="debit-title">HUSKY BANK</div>
+          <div class="debit-subtitle">Debit Card</div>
+          <div class="debit-paws">🐾 🐾 🐾</div>
         </div>
-        <div>
-          <div class="debit-student">Student #${s.id}</div>
+
+        <div style="width:100%;">
+          <div class="debit-label">Student Number</div>
+          <div class="debit-student">#${s.id}</div>
+
+          <div class="debit-label">Starting Balance</div>
           <div class="debit-amount">${fmt(s.cardAmount)}</div>
-          <div style="margin-top:16px;font-size:16px;font-weight:800;color:#000;">New Balance: $________</div>
+
+          <div class="debit-balance-box">
+            <span>New Balance</span>
+            <span>$________</span>
+          </div>
         </div>
-        <div class="debit-footer">Write the remaining balance on the card, then return it to the teacher.</div>
+
+        <div class="debit-footer">After shopping, write the new balance and return the card to the teacher.</div>
       </div>
     `).join('');
 
