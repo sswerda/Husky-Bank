@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#355e3b">
 <title>Husky Bank</title>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
   :root{
     --forest:#355e3b;
@@ -75,69 +73,6 @@
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:6px}
   #printArea{display:none}
 
-  .store-shell{
-    display:none;
-    max-width:620px;
-    margin:0 auto;
-    padding:18px;
-  }
-  .store-card{
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:22px;
-    padding:20px;
-  }
-  .store-head{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:12px;
-    margin-bottom:16px;
-  }
-  .store-head h1{margin:0;color:var(--forest);font-size:30px}
-  .store-head p{margin:4px 0 0;color:var(--muted)}
-  #reader{width:100%;overflow:hidden;border-radius:16px}
-  .store-student{
-    display:none;
-    margin-top:16px;
-    border:2px solid var(--forest);
-    border-radius:18px;
-    padding:16px;
-  }
-  .store-student .student-label{
-    font-size:13px;
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    font-weight:900;
-    color:var(--muted);
-  }
-  .store-student .student-id{
-    font-size:38px;
-    font-weight:950;
-    color:var(--forest);
-  }
-  .store-balance{
-    font-size:32px;
-    font-weight:950;
-    margin:8px 0 14px;
-  }
-  .store-field label{
-    display:block;
-    font-weight:900;
-    color:var(--forest);
-    margin-bottom:6px;
-  }
-  .store-field input{
-    width:100%;
-    border:2px solid #cfd9cc;
-    border-radius:14px;
-    padding:12px 14px;
-    font-size:28px;
-    font-weight:900;
-  }
-  .store-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  .store-message{margin-top:12px;font-weight:800;color:var(--forest)}
-
 
   @media print{
     body *{visibility:hidden!important}
@@ -168,38 +103,7 @@
 </style>
 </head>
 <body>
-<section id="storeShell" class="store-shell">
-  <div class="store-card">
-    <div class="store-head">
-      <div>
-        <h1>🐾 Husky Store</h1>
-        <p>Scan a debit card, update the remaining balance, then scan the next card.</p>
-      </div>
-      <button class="btn" id="exitStoreBtn" type="button">Exit</button>
-    </div>
-
-    <div id="reader"></div>
-
-    <div id="storeStudent" class="store-student">
-      <div class="student-label">Student</div>
-      <div class="student-id" id="storeStudentId">#</div>
-      <div class="store-balance">Card Balance: <span id="storeCurrentBalance">$0</span></div>
-
-      <div class="store-field">
-        <label for="storeRemaining">Remaining after shopping</label>
-        <input id="storeRemaining" type="number" min="0" step="1" inputmode="decimal">
-      </div>
-
-      <div class="store-actions">
-        <button class="btn primary" id="saveStoreBtn" type="button">Save & Scan Next</button>
-        <button class="btn" id="cancelStudentBtn" type="button">Cancel</button>
-      </div>
-      <div class="store-message" id="storeMessage"></div>
-    </div>
-  </div>
-</section>
-
-<div class="app" id="teacherApp">
+<div class="app">
   <div class="topbar">
     <div class="brand">
       <h1>🐾 Husky Bank</h1>
@@ -207,7 +111,6 @@
     </div>
     <div class="top-actions">
       <button class="btn gold" id="transferAllPrintBtn" type="button">Transfer All & Print Cards</button>
-      <button class="btn primary" id="storeModeBtn" type="button">Husky Store Mode</button>
       <button class="btn" id="revertTransferBtn" type="button" disabled>Revert Last Transfer</button>
       <button class="btn" id="printCardsBtn" type="button">Print Transferred Cards</button>
       <button class="btn" id="exportBtn" type="button">Export Backup</button>
@@ -359,40 +262,21 @@
       return false;
     }
 
-    const cards=document.getElementById('printCards');
-    cards.innerHTML=students.map((s,i)=>`
+    document.getElementById('printCards').innerHTML=students.map(s=>`
       <div class="debit-card">
         <div class="debit-top">
           <div class="debit-title">HUSKY BANK<br>DEBIT CARD</div>
           <div class="paw">🐾</div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-          <div>
-            <div class="debit-student">Student #${s.id}</div>
-            <div class="debit-amount">${fmt(s.cardAmount)}</div>
-          </div>
-          <div id="qr-${i}" style="width:88px;height:88px"></div>
+        <div>
+          <div class="debit-student">Student #${s.id}</div>
+          <div class="debit-amount">${fmt(s.cardAmount)}</div>
         </div>
-        <div class="debit-footer">Scan at Husky Store checkout. Write the remaining balance on the card.</div>
+        <div class="debit-footer">Cross out the starting amount after shopping and write the new remaining balance clearly.</div>
       </div>
     `).join('');
 
-    if(typeof QRCode==='undefined'){
-      alert('QR code library did not load. Cards can still print, but QR codes are unavailable.');
-      window.print();
-      return true;
-    }
-
-    students.forEach((s,i)=>{
-      new QRCode(document.getElementById(`qr-${i}`),{
-        text:`${location.origin}${location.pathname}?store=1&student=${encodeURIComponent(s.id)}&balance=${encodeURIComponent(s.cardAmount)}`,
-        width:88,
-        height:88,
-        correctLevel:QRCode.CorrectLevel.M
-      });
-    });
-
-    setTimeout(()=>window.print(),250);
+    window.print();
     return true;
   }
 
@@ -426,7 +310,7 @@
       hist.innerHTML=data.history.slice(0,40).map(h=>{
         const d=new Date(h.ts);
         const time=d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-        const title=h.type==='deposit'?'Deposit':h.type==='transfer'?'Transferred to card':h.type==='store'?'Husky Store purchase':'Card balance returned';
+        const title=h.type==='deposit'?'Deposit':h.type==='transfer'?'Transferred to card':'Card balance returned';
         return `<div class="event">
           <div class="line1"><span>${h.student} • ${title}</span><span>${fmt(h.amount)}</span></div>
           <div class="line2">${time}${h.note?' • '+h.note:''}</div>
@@ -685,161 +569,9 @@
   });
 
 
-  let qrScanner=null;
-  let activeStoreStudent=null;
-  let scanning=false;
-
-  function openStudentFromUrl(){
-    const params=new URLSearchParams(location.search);
-    if(params.get('store')!=='1') return false;
-
-    const id=Number(params.get('student'));
-    const balance=Number(params.get('balance'));
-
-    document.getElementById('teacherApp').style.display='none';
-    document.getElementById('storeShell').style.display='block';
-
-    if(Number.isFinite(id) && Number.isFinite(balance) && balance>=0){
-      let s=studentById(id);
-      if(!s) s={id,bank:0,cardOut:true,cardAmount:balance,_scannedOnly:true};
-      s.cardAmount=balance;
-      activeStoreStudent=s;
-
-      document.getElementById('storeStudentId').textContent=`#${id}`;
-      document.getElementById('storeCurrentBalance').textContent=fmt(balance);
-      document.getElementById('storeRemaining').value=balance;
-      document.getElementById('storeStudent').style.display='block';
-      document.getElementById('storeMessage').textContent='Enter the remaining balance after shopping.';
-      return true;
-    }
-
-    setTimeout(()=>startScanner(),100);
-    return true;
-  }
-
-  async function startScanner(){
-    if(typeof Html5Qrcode==='undefined'){
-      alert('The scanner library did not load. Open this from the published GitHub Pages site and try again.');
-      return;
-    }
-    if(scanning) return;
-
-    document.getElementById('storeStudent').style.display='none';
-    document.getElementById('storeMessage').textContent='';
-
-    qrScanner=new Html5Qrcode('reader');
-    try{
-      await qrScanner.start(
-        {facingMode:'environment'},
-        {fps:10, qrbox:{width:240,height:240}},
-        async decodedText=>{
-          let id=null;
-          let scannedBalance=null;
-
-          if(decodedText.startsWith('HUSKY:')){
-            id=Number(decodedText.split(':')[1]);
-          }else{
-            try{
-              const u=new URL(decodedText);
-              if(u.searchParams.get('store')==='1'){
-                id=Number(u.searchParams.get('student'));
-                const b=Number(u.searchParams.get('balance'));
-                if(Number.isFinite(b)) scannedBalance=b;
-              }
-            }catch(e){}
-          }
-
-          if(!Number.isFinite(id)) return;
-
-          let s=studentById(id);
-          if(!s && scannedBalance!==null){
-            s={id,bank:0,cardOut:true,cardAmount:scannedBalance,_scannedOnly:true};
-          }
-
-          if(!s || (!s.cardOut && scannedBalance===null)){
-            document.getElementById('storeMessage').textContent='That card is not currently active.';
-            return;
-          }
-
-          if(scannedBalance!==null) s.cardAmount=scannedBalance;
-          activeStoreStudent=s;
-          scanning=false;
-          try{ await qrScanner.stop(); }catch(e){}
-          qrScanner.clear();
-
-          document.getElementById('storeStudentId').textContent=`#${s.id}`;
-          document.getElementById('storeCurrentBalance').textContent=fmt(s.cardAmount);
-          document.getElementById('storeRemaining').value=s.cardAmount;
-          document.getElementById('storeStudent').style.display='block';
-          setTimeout(()=>document.getElementById('storeRemaining').select(),100);
-        },
-        ()=>{}
-      );
-      scanning=true;
-    }catch(e){
-      alert('Camera access could not start. Make sure you are using the published HTTPS website and allow camera access.');
-    }
-  }
-
-  async function stopScanner(){
-    if(qrScanner && scanning){
-      try{ await qrScanner.stop(); }catch(e){}
-      try{ qrScanner.clear(); }catch(e){}
-    }
-    scanning=false;
-    qrScanner=null;
-  }
-
-  document.getElementById('storeModeBtn').addEventListener('click',async ()=>{
-    document.getElementById('teacherApp').style.display='none';
-    document.getElementById('storeShell').style.display='block';
-    await startScanner();
-  });
-
-  document.getElementById('exitStoreBtn').addEventListener('click',async ()=>{
-    await stopScanner();
-    document.getElementById('storeShell').style.display='none';
-    document.getElementById('teacherApp').style.display='block';
-    activeStoreStudent=null;
-  });
-
-  document.getElementById('cancelStudentBtn').addEventListener('click',async ()=>{
-    activeStoreStudent=null;
-    document.getElementById('storeStudent').style.display='none';
-    await startScanner();
-  });
-
-  document.getElementById('saveStoreBtn').addEventListener('click',async ()=>{
-    if(!activeStoreStudent) return;
-
-    const remaining=Number(document.getElementById('storeRemaining').value);
-    if(!Number.isFinite(remaining)||remaining<0){
-      alert('Enter a valid remaining balance.');
-      return;
-    }
-    if(remaining>Number(activeStoreStudent.cardAmount)){
-      alert('The remaining balance cannot be more than the current card balance.');
-      return;
-    }
-
-    const before=Number(activeStoreStudent.cardAmount);
-    const spent=before-remaining;
-
-    activeStoreStudent.cardAmount=remaining;
-    log(activeStoreStudent.id,'store',spent,`${fmt(remaining)} remaining on card`);
-    save();
-
-    document.getElementById('storeMessage').textContent=`Saved. ${fmt(remaining)} remains on Student #${activeStoreStudent.id}'s card.`;
-    activeStoreStudent=null;
-    document.getElementById('storeStudent').style.display='none';
-
-    setTimeout(()=>startScanner(),500);
-  });
-
   render();
   updateRevertButton();
-  const openedFromQr=openStudentFromUrl();
-  if(!openedFromQr && !data.students.length) setTimeout(openSetup,100);
+  if(!data.students.length) setTimeout(openSetup,100);
 })();
 </script>
 </body>
