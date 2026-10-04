@@ -45,14 +45,14 @@
   .quick{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .quick input{width:110px;border:1px solid #cfd9cc;border-radius:10px;padding:8px 10px}
   table{width:100%;border-collapse:collapse}
-  th,td{padding:12px 14px;border-bottom:1px solid #edf0eb;text-align:left}
+  th,td{padding:8px 14px;border-bottom:1px solid #edf0eb;text-align:left}
   th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#f8faf7;position:sticky;top:0}
   .student{font-weight:900;color:var(--forest);font-size:17px}
   .money{font-weight:900;font-variant-numeric:tabular-nums}
   .status{display:inline-flex;padding:5px 8px;border-radius:999px;background:#eef4eb;color:var(--forest);font-size:12px;font-weight:900}
   .status.cardout{background:#fff2cf;color:#795d1d}
   .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-  .tiny{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 9px;font-weight:800;color:var(--forest)}
+  .tiny{border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 9px;font-weight:800;color:var(--forest)}
   .tiny.transfer{background:#fff8e5}
   .tiny.return{background:#eef7ff}
   .side-section{padding:14px 16px;border-bottom:1px solid var(--line)}
@@ -226,7 +226,7 @@
           <button class="btn primary" id="quickDepositBtn" type="button">Quick Deposit</button>
         </div>
       </div>
-      <div style="overflow:auto;max-height:68vh">
+      <div style="overflow:auto;max-height:calc(100vh - 185px)">
         <table>
           <thead>
             <tr><th>Student</th><th>Bank</th><th>Status</th><th>Card Amount</th><th>Actions</th></tr>
