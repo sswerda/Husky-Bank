@@ -262,7 +262,8 @@
       return false;
     }
 
-    document.getElementById('printCards').innerHTML=students.map(s=>`
+    const cards=document.getElementById('printCards');
+    cards.innerHTML=students.map((s)=>`
       <div class="debit-card">
         <div class="debit-top">
           <div class="debit-title">HUSKY BANK<br>DEBIT CARD</div>
@@ -271,12 +272,13 @@
         <div>
           <div class="debit-student">Student #${s.id}</div>
           <div class="debit-amount">${fmt(s.cardAmount)}</div>
+          <div style="margin-top:16px;font-size:16px;font-weight:800;color:#000;">New Balance: $________</div>
         </div>
-        <div class="debit-footer">Cross out the starting amount after shopping and write the new remaining balance clearly.</div>
+        <div class="debit-footer">Write the remaining balance on the card, then return it to the teacher.</div>
       </div>
     `).join('');
 
-    window.print();
+    setTimeout(()=>window.print(),100);
     return true;
   }
 
