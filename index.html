@@ -385,7 +385,7 @@
 
     students.forEach((s,i)=>{
       new QRCode(document.getElementById(`qr-${i}`),{
-        text:`HUSKY:${s.id}`,
+        text:`${location.origin}${location.pathname}?store=1&student=${encodeURIComponent(s.id)}&balance=${encodeURIComponent(s.cardAmount)}`,
         width:88,
         height:88,
         correctLevel:QRCode.CorrectLevel.M
@@ -689,6 +689,34 @@
   let activeStoreStudent=null;
   let scanning=false;
 
+  function openStudentFromUrl(){
+    const params=new URLSearchParams(location.search);
+    if(params.get('store')!=='1') return false;
+
+    const id=Number(params.get('student'));
+    const balance=Number(params.get('balance'));
+
+    document.getElementById('teacherApp').style.display='none';
+    document.getElementById('storeShell').style.display='block';
+
+    if(Number.isFinite(id) && Number.isFinite(balance) && balance>=0){
+      let s=studentById(id);
+      if(!s) s={id,bank:0,cardOut:true,cardAmount:balance,_scannedOnly:true};
+      s.cardAmount=balance;
+      activeStoreStudent=s;
+
+      document.getElementById('storeStudentId').textContent=`#${id}`;
+      document.getElementById('storeCurrentBalance').textContent=fmt(balance);
+      document.getElementById('storeRemaining').value=balance;
+      document.getElementById('storeStudent').style.display='block';
+      document.getElementById('storeMessage').textContent='Enter the remaining balance after shopping.';
+      return true;
+    }
+
+    setTimeout(()=>startScanner(),100);
+    return true;
+  }
+
   async function startScanner(){
     if(typeof Html5Qrcode==='undefined'){
       alert('The scanner library did not load. Open this from the published GitHub Pages site and try again.');
@@ -705,14 +733,35 @@
         {facingMode:'environment'},
         {fps:10, qrbox:{width:240,height:240}},
         async decodedText=>{
-          if(!decodedText.startsWith('HUSKY:')) return;
-          const id=Number(decodedText.split(':')[1]);
-          const s=studentById(id);
-          if(!s || !s.cardOut){
+          let id=null;
+          let scannedBalance=null;
+
+          if(decodedText.startsWith('HUSKY:')){
+            id=Number(decodedText.split(':')[1]);
+          }else{
+            try{
+              const u=new URL(decodedText);
+              if(u.searchParams.get('store')==='1'){
+                id=Number(u.searchParams.get('student'));
+                const b=Number(u.searchParams.get('balance'));
+                if(Number.isFinite(b)) scannedBalance=b;
+              }
+            }catch(e){}
+          }
+
+          if(!Number.isFinite(id)) return;
+
+          let s=studentById(id);
+          if(!s && scannedBalance!==null){
+            s={id,bank:0,cardOut:true,cardAmount:scannedBalance,_scannedOnly:true};
+          }
+
+          if(!s || (!s.cardOut && scannedBalance===null)){
             document.getElementById('storeMessage').textContent='That card is not currently active.';
             return;
           }
 
+          if(scannedBalance!==null) s.cardAmount=scannedBalance;
           activeStoreStudent=s;
           scanning=false;
           try{ await qrScanner.stop(); }catch(e){}
@@ -789,7 +838,8 @@
 
   render();
   updateRevertButton();
-  if(!data.students.length) setTimeout(openSetup,100);
+  const openedFromQr=openStudentFromUrl();
+  if(!openedFromQr && !data.students.length) setTimeout(openSetup,100);
 })();
 </script>
 </body>
