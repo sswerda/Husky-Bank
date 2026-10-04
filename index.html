@@ -169,6 +169,12 @@
       <label id="amountLabel" for="actionAmount">Amount</label>
       <input id="actionAmount" type="number" min="0" step="1">
     </div>
+    <div id="freshStartWrap" style="display:none;margin:2px 0 12px;">
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:700;color:var(--ink);">
+        <input id="freshStartCheck" type="checkbox" style="width:auto;margin-top:2px;">
+        <span>New student / fresh start — clear this student number's old transaction history and card status.</span>
+      </label>
+    </div>
     <div class="modal-actions">
       <button class="btn" id="cancelActionBtn" type="button">Cancel</button>
       <button class="btn primary" id="saveActionBtn" type="button">Save</button>
@@ -299,7 +305,7 @@
             <button class="tiny" data-action="deposit" data-id="${s.id}" type="button">+ Deposit</button>
             <button class="tiny transfer" data-action="transfer" data-id="${s.id}" type="button" ${s.cardOut?'disabled':''}>Transfer</button>
             <button class="tiny return" data-action="return" data-id="${s.id}" type="button" ${!s.cardOut?'disabled':''}>Return Card</button>
-            <button class="tiny" data-action="reset-student" data-id="${s.id}" type="button">Reset Student</button>
+            <button class="tiny" data-action="set-balance" data-id="${s.id}" type="button">Set Balance</button>
           </div>
         </td>`;
       rows.appendChild(tr);
@@ -312,7 +318,7 @@
       hist.innerHTML=data.history.slice(0,40).map(h=>{
         const d=new Date(h.ts);
         const time=d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-        const title=h.type==='deposit'?'Deposit':h.type==='transfer'?'Transferred to card':'Card balance returned';
+        const title=h.type==='deposit'?'Deposit':h.type==='transfer'?'Transferred to card':h.type==='adjustment'?'Balance adjusted':'Card balance returned';
         return `<div class="event">
           <div class="line1"><span>${h.student} • ${title}</span><span>${fmt(h.amount)}</span></div>
           <div class="line2">${time}${h.note?' • '+h.note:''}</div>
@@ -328,6 +334,11 @@
     const amount=document.getElementById('actionAmount');
     amount.value='';
 
+    const freshWrap=document.getElementById('freshStartWrap');
+    const freshCheck=document.getElementById('freshStartCheck');
+    freshWrap.style.display='none';
+    freshCheck.checked=false;
+
     if(type==='deposit'){
       document.getElementById('modalTitle').textContent=`Deposit Huskies • ${id}`;
       document.getElementById('amountLabel').textContent='Amount to add';
@@ -341,6 +352,11 @@
       log(id,'transfer',transferred,'Full balance transferred');
       save();
       return;
+    }else if(type==='set-balance'){
+      document.getElementById('modalTitle').textContent=`Set Balance • Student #${id}`;
+      document.getElementById('amountLabel').textContent='Exact bank balance';
+      amount.value=s.bank;
+      freshWrap.style.display='block';
     }else{
       document.getElementById('modalTitle').textContent=`Return Debit Card • ${id}`;
       document.getElementById('amountLabel').textContent='Balance remaining on card';
@@ -357,32 +373,6 @@
 
     const action=btn.dataset.action;
     const id=Number(btn.dataset.id);
-
-    if(action==='reset-student'){
-      const s=studentById(id);
-      if(!s) return;
-
-      const ok=confirm(
-        `Reset Student #${id}?\n\n` +
-        `This will set the bank balance to $0, clear any card-out amount/status, ` +
-        `and remove this student's transaction history so the number can be reused for a new student.\n\n` +
-        `This cannot be undone.`
-      );
-      if(!ok) return;
-
-      s.bank=0;
-      s.cardOut=false;
-      s.cardAmount=0;
-      data.history=data.history.filter(h=>Number(h.student)!==id);
-
-      // A classwide transfer snapshot could contain the old student's data,
-      // so clear it to prevent an accidental restore.
-      setTransferSnapshot(null);
-
-      save();
-      return;
-    }
-
     openAction(action, id);
   });
 
@@ -400,6 +390,21 @@
     if(type==='deposit'){
       s.bank += amount;
       log(id,'deposit',amount);
+    }else if(type==='set-balance'){
+      const oldBalance=s.bank;
+      const freshStart=document.getElementById('freshStartCheck').checked;
+
+      s.bank=amount;
+
+      if(freshStart){
+        s.cardOut=false;
+        s.cardAmount=0;
+        data.history=data.history.filter(h=>Number(h.student)!==Number(id));
+        setTransferSnapshot(null);
+        log(id,'adjustment',amount,'Fresh start / new student');
+      }else{
+        log(id,'adjustment',amount,`Balance changed from ${fmt(oldBalance)} to ${fmt(amount)}`);
+      }
     }else if(type==='return'){
       if(amount>s.cardAmount){ alert('Returned balance cannot be more than the amount on the card.'); return; }
       const spent=s.cardAmount-amount;
