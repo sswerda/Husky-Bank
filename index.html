@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#355e3b">
+<title>Husky Bank</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+  :root{
+    --forest:#355e3b;
+    --sage:#e7efe3;
+    --cream:#fffaf0;
+    --paper:#ffffff;
+    --ink:#263126;
+    --muted:#687269;
+    --line:#dfe6dc;
+    --gold:#e5bd63;
+    --danger:#a24c44;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:linear-gradient(180deg,var(--cream),#f4f8f1);
+    color:var(--ink);
+  }
+  button,input,textarea{font:inherit}
+  button{cursor:pointer}
+  .app{max-width:1200px;margin:0 auto;padding:22px}
+  .topbar{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+  .brand h1{margin:0;color:var(--forest);font-size:34px}
+  .brand p{margin:5px 0 0;color:var(--muted)}
+  .top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .btn{border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:800;background:#fff;color:var(--forest)}
+  .btn.primary{background:var(--forest);color:#fff;border-color:var(--forest)}
+  .btn.gold{background:#fff7df;border-color:#ead59d;color:#70571d}
+  .btn.danger{color:var(--danger)}
+  .btn:disabled,.tiny:disabled{opacity:.45;cursor:not-allowed}
+  .main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .panel-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);background:#fbfcfa}
+  .panel-head h2{margin:0;font-size:18px;color:var(--forest)}
+  .quick{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .quick input{width:110px;border:1px solid #cfd9cc;border-radius:10px;padding:8px 10px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:12px 14px;border-bottom:1px solid #edf0eb;text-align:left}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#f8faf7;position:sticky;top:0}
+  .student{font-weight:900;color:var(--forest);font-size:17px}
+  .money{font-weight:900;font-variant-numeric:tabular-nums}
+  .status{display:inline-flex;padding:5px 8px;border-radius:999px;background:#eef4eb;color:var(--forest);font-size:12px;font-weight:900}
+  .status.cardout{background:#fff2cf;color:#795d1d}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .tiny{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 9px;font-weight:800;color:var(--forest)}
+  .tiny.transfer{background:#fff8e5}
+  .tiny.return{background:#eef7ff}
+  .side-section{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .side-section h3{margin:0 0 10px;color:var(--forest);font-size:15px}
+  .history{max-height:520px;overflow:auto}
+  .event{padding:10px 0;border-bottom:1px solid #edf0eb}
+  .event .line1{display:flex;justify-content:space-between;gap:10px;font-weight:800}
+  .event .line2{font-size:12px;color:var(--muted);margin-top:3px}
+  .empty{color:var(--muted);font-size:14px}
+  .roster-grid{display:grid;grid-template-columns:1fr auto;gap:8px}
+  .roster-grid input{border:1px solid #cfd9cc;border-radius:10px;padding:9px 10px;min-width:0;text-transform:uppercase}
+  dialog{border:none;border-radius:18px;padding:0;width:min(480px,calc(100% - 32px))}
+  dialog::backdrop{background:rgba(20,30,22,.35)}
+  .modal-head{padding:16px 18px;border-bottom:1px solid var(--line);font-weight:900;color:var(--forest);font-size:19px}
+  .modal-body{padding:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:900;color:var(--forest);margin-bottom:6px}
+  .field input,.field textarea{width:100%;border:2px solid #cfd9cc;border-radius:12px;padding:11px 12px}
+  .field input{font-size:22px;font-weight:900}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:6px}
+  #printArea{display:none}
+
+  .store-shell{
+    display:none;
+    max-width:620px;
+    margin:0 auto;
+    padding:18px;
+  }
+  .store-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:20px;
+  }
+  .store-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .store-head h1{margin:0;color:var(--forest);font-size:30px}
+  .store-head p{margin:4px 0 0;color:var(--muted)}
+  #reader{width:100%;overflow:hidden;border-radius:16px}
+  .store-student{
+    display:none;
+    margin-top:16px;
+    border:2px solid var(--forest);
+    border-radius:18px;
+    padding:16px;
+  }
+  .store-student .student-label{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:900;
+    color:var(--muted);
+  }
+  .store-student .student-id{
+    font-size:38px;
+    font-weight:950;
+    color:var(--forest);
+  }
+  .store-balance{
+    font-size:32px;
+    font-weight:950;
+    margin:8px 0 14px;
+  }
+  .store-field label{
+    display:block;
+    font-weight:900;
+    color:var(--forest);
+    margin-bottom:6px;
+  }
+  .store-field input{
+    width:100%;
+    border:2px solid #cfd9cc;
+    border-radius:14px;
+    padding:12px 14px;
+    font-size:28px;
+    font-weight:900;
+  }
+  .store-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .store-message{margin-top:12px;font-weight:800;color:var(--forest)}
+
+
+  @media print{
+    body *{visibility:hidden!important}
+    #printArea,#printArea *{visibility:visible!important}
+    #printArea{display:block!important;position:absolute;left:0;top:0;width:100%;padding:.25in;background:#fff}
+    .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:.18in}
+    .debit-card{
+      border:2px solid #000;
+      border-radius:14px;
+      height:2.25in;
+      padding:.18in;
+      page-break-inside:avoid;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      background:#fff;
+      color:#000;
+    }
+    .debit-top{display:flex;justify-content:space-between;align-items:flex-start}
+    .debit-title{font-size:20px;font-weight:900;color:#000}
+    .paw{font-size:28px;color:#000}
+    .debit-student{font-size:22px;font-weight:900}
+    .debit-amount{font-size:34px;font-weight:950;color:#000}
+    .debit-footer{font-size:11px;color:#000}
+  }
+
+  @media (max-width:900px){.main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<section id="storeShell" class="store-shell">
+  <div class="store-card">
+    <div class="store-head">
+      <div>
+        <h1>🐾 Husky Store</h1>
+        <p>Scan a debit card, update the remaining balance, then scan the next card.</p>
+      </div>
+      <button class="btn" id="exitStoreBtn" type="button">Exit</button>
+    </div>
+
+    <div id="reader"></div>
+
+    <div id="storeStudent" class="store-student">
+      <div class="student-label">Student</div>
+      <div class="student-id" id="storeStudentId">#</div>
+      <div class="store-balance">Card Balance: <span id="storeCurrentBalance">$0</span></div>
+
+      <div class="store-field">
+        <label for="storeRemaining">Remaining after shopping</label>
+        <input id="storeRemaining" type="number" min="0" step="1" inputmode="decimal">
+      </div>
+
+      <div class="store-actions">
+        <button class="btn primary" id="saveStoreBtn" type="button">Save & Scan Next</button>
+        <button class="btn" id="cancelStudentBtn" type="button">Cancel</button>
+      </div>
+      <div class="store-message" id="storeMessage"></div>
+    </div>
+  </div>
+</section>
+
+<div class="app" id="teacherApp">
+  <div class="topbar">
+    <div class="brand">
+      <h1>🐾 Husky Bank</h1>
+      <p>Current balances • debit-card transfers</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn gold" id="transferAllPrintBtn" type="button">Transfer All & Print Cards</button>
+      <button class="btn primary" id="storeModeBtn" type="button">Husky Store Mode</button>
+      <button class="btn" id="revertTransferBtn" type="button" disabled>Revert Last Transfer</button>
+      <button class="btn" id="printCardsBtn" type="button">Reprint Debit Cards</button>
+      <button class="btn" id="exportBtn" type="button">Export Backup</button>
+      <label class="btn" for="importFile">Import Backup</label>
+      <input id="importFile" type="file" accept=".json" hidden>
+    </div>
+  </div>
+
+  <div class="main">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Class Dashboard</h2>
+        <div class="quick">
+          <input id="quickId" type="number" min="1" step="1" placeholder="Student #">
+          <input id="quickAmount" type="number" min="0" step="1" placeholder="Deposit">
+          <button class="btn primary" id="quickDepositBtn" type="button">Quick Deposit</button>
+        </div>
+      </div>
+      <div style="overflow:auto;max-height:68vh">
+        <table>
+          <thead>
+            <tr><th>Student</th><th>Bank</th><th>Status</th><th>Card Amount</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="studentRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="side-section">
+        <h3>Roster</h3>
+        <div class="roster-grid">
+          <input id="newStudentNumber" type="number" min="1" step="1" placeholder="Add student #">
+          <button class="btn" id="addStudentBtn" type="button">Add</button>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">Student Number</div>
+        <button class="btn" id="setupRosterBtn" type="button" style="width:100%;margin-top:10px">Set Up / Replace Roster</button>
+      </div>
+
+      <div class="side-section history">
+        <h3>Recent Activity</h3>
+        <div id="historyList"></div>
+      </div>
+
+      <div class="side-section">
+        <button class="btn danger" id="resetBtn" type="button">Reset All Husky Bank Data</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<dialog id="actionDialog">
+  <div class="modal-head" id="modalTitle">Student</div>
+  <div class="modal-body">
+    <div class="field">
+      <label id="amountLabel" for="actionAmount">Amount</label>
+      <input id="actionAmount" type="number" min="0" step="1">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelActionBtn" type="button">Cancel</button>
+      <button class="btn primary" id="saveActionBtn" type="button">Save</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="setupDialog">
+  <div class="modal-head">Set Up Class Roster</div>
+  <div class="modal-body">
+    <div class="field">
+      <label for="highestNumber">Highest class number</label>
+      <input id="highestNumber" type="number" min="1" max="200" step="1" value="22">
+    </div>
+    <div class="field">
+      <label for="skipNumbers">Skip numbers (optional)</label>
+      <input id="skipNumbers" type="text" placeholder="Example: 9, 23">
+    </div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.4">
+      This creates class numbers 1 through the highest number, leaving out any numbers you list.
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelSetupBtn" type="button">Cancel</button>
+      <button class="btn primary" id="createRosterBtn" type="button">Create Roster</button>
+    </div>
+  </div>
+</dialog>
+
+<section id="printArea">
+  <div class="cards" id="printCards"></div>
+</section>
+
+<script>
+(() => {
+  const KEY='huskyBankV2';
+  const TRANSFER_SNAPSHOT_KEY='huskyBankLastTransferSnapshotV1';
+  let data = load();
+  let pendingAction = null;
+
+  function load(){
+    try{
+      const saved=localStorage.getItem(KEY);
+      if(saved) return JSON.parse(saved);
+    }catch(e){}
+    return {students:[],history:[]};
+  }
+
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){}
+    render();
+  }
+
+  function fmt(n){ return '$'+Number(n||0).toFixed(0); }
+  function studentById(id){
+    return data.students.find(s => Number(s.id) === Number(id));
+  }
+  function log(student,type,amount,note=''){
+    data.history.unshift({ts:new Date().toISOString(),student:Number(student),type,amount:Number(amount||0),note});
+    data.history=data.history.slice(0,300);
+  }
+
+  function setTransferSnapshot(snapshot){
+    try{
+      if(snapshot){
+        localStorage.setItem(TRANSFER_SNAPSHOT_KEY, JSON.stringify(snapshot));
+      }else{
+        localStorage.removeItem(TRANSFER_SNAPSHOT_KEY);
+      }
+    }catch(e){}
+    updateRevertButton();
+  }
+
+  function getTransferSnapshot(){
+    try{
+      const saved=localStorage.getItem(TRANSFER_SNAPSHOT_KEY);
+      return saved ? JSON.parse(saved) : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function updateRevertButton(){
+    const btn=document.getElementById('revertTransferBtn');
+    if(btn) btn.disabled=!getTransferSnapshot();
+  }
+
+  function buildAndPrintCards(){
+    const students=data.students.filter(s=>s.cardOut && Number(s.cardAmount)>0);
+    if(!students.length){
+      alert('No students currently have money transferred to a debit card.');
+      return false;
+    }
+
+    const cards=document.getElementById('printCards');
+    cards.innerHTML=students.map((s,i)=>`
+      <div class="debit-card">
+        <div class="debit-top">
+          <div class="debit-title">HUSKY BANK<br>DEBIT CARD</div>
+          <div class="paw">🐾</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div>
+            <div class="debit-student">Student #${s.id}</div>
+            <div class="debit-amount">${fmt(s.cardAmount)}</div>
+          </div>
+          <div id="qr-${i}" style="width:88px;height:88px"></div>
+        </div>
+        <div class="debit-footer">Scan at Husky Store checkout. Write the remaining balance on the card.</div>
+      </div>
+    `).join('');
+
+    if(typeof QRCode==='undefined'){
+      alert('QR code library did not load. Cards can still print, but QR codes are unavailable.');
+      window.print();
+      return true;
+    }
+
+    students.forEach((s,i)=>{
+      new QRCode(document.getElementById(`qr-${i}`),{
+        text:`HUSKY:${s.id}`,
+        width:88,
+        height:88,
+        correctLevel:QRCode.CorrectLevel.M
+      });
+    });
+
+    setTimeout(()=>window.print(),250);
+    return true;
+  }
+
+  function render(){
+    data.students.sort((a,b)=>Number(a.id)-Number(b.id));
+    const rows=document.getElementById('studentRows');
+    rows.innerHTML='';
+
+    for(const s of data.students){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td class="student">${s.id}</td>
+        <td class="money">${fmt(s.bank)}</td>
+        <td><span class="status ${s.cardOut?'cardout':''}">${s.cardOut?'CARD OUT':'IN BANK'}</span></td>
+        <td class="money">${s.cardOut?fmt(s.cardAmount):'—'}</td>
+        <td>
+          <div class="row-actions">
+            <button class="tiny" data-action="deposit" data-id="${s.id}" type="button">+ Deposit</button>
+            <button class="tiny transfer" data-action="transfer" data-id="${s.id}" type="button" ${s.cardOut?'disabled':''}>Transfer</button>
+            <button class="tiny return" data-action="return" data-id="${s.id}" type="button" ${!s.cardOut?'disabled':''}>Return Card</button>
+            <button class="tiny" data-action="reset-student" data-id="${s.id}" type="button">Reset Student</button>
+          </div>
+        </td>`;
+      rows.appendChild(tr);
+    }
+
+    const hist=document.getElementById('historyList');
+    if(!data.history.length){
+      hist.innerHTML='<div class="empty">No transactions yet.</div>';
+    }else{
+      hist.innerHTML=data.history.slice(0,40).map(h=>{
+        const d=new Date(h.ts);
+        const time=d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+        const title=h.type==='deposit'?'Deposit':h.type==='transfer'?'Transferred to card':h.type==='store'?'Husky Store purchase':'Card balance returned';
+        return `<div class="event">
+          <div class="line1"><span>${h.student} • ${title}</span><span>${fmt(h.amount)}</span></div>
+          <div class="line2">${time}${h.note?' • '+h.note:''}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function openAction(type,id){
+    const s=studentById(id);
+    if(!s) return;
+    pendingAction={type,id:String(id).toUpperCase()};
+    const amount=document.getElementById('actionAmount');
+    amount.value='';
+
+    if(type==='deposit'){
+      document.getElementById('modalTitle').textContent=`Deposit Huskies • ${id}`;
+      document.getElementById('amountLabel').textContent='Amount to add';
+    }else if(type==='transfer'){
+      if(s.bank<=0){ alert('This student has no bank balance to transfer.'); return; }
+      if(!confirm(`Transfer the full ${fmt(s.bank)} balance for ${id} to the debit card?`)) return;
+      const transferred=s.bank;
+      s.bank=0;
+      s.cardOut=true;
+      s.cardAmount=transferred;
+      log(id,'transfer',transferred,'Full balance transferred');
+      save();
+      return;
+    }else{
+      document.getElementById('modalTitle').textContent=`Return Debit Card • ${id}`;
+      document.getElementById('amountLabel').textContent='Balance remaining on card';
+      amount.value=s.cardAmount;
+    }
+
+    document.getElementById('actionDialog').showModal();
+    setTimeout(()=>amount.select(),50);
+  }
+
+  document.getElementById('studentRows').addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-action]');
+    if(!btn || btn.disabled) return;
+
+    const action=btn.dataset.action;
+    const id=Number(btn.dataset.id);
+
+    if(action==='reset-student'){
+      const s=studentById(id);
+      if(!s) return;
+
+      const ok=confirm(
+        `Reset Student #${id}?\n\n` +
+        `This will set the bank balance to $0, clear any card-out amount/status, ` +
+        `and remove this student's transaction history so the number can be reused for a new student.\n\n` +
+        `This cannot be undone.`
+      );
+      if(!ok) return;
+
+      s.bank=0;
+      s.cardOut=false;
+      s.cardAmount=0;
+      data.history=data.history.filter(h=>Number(h.student)!==id);
+
+      // A classwide transfer snapshot could contain the old student's data,
+      // so clear it to prevent an accidental restore.
+      setTransferSnapshot(null);
+
+      save();
+      return;
+    }
+
+    openAction(action, id);
+  });
+
+  document.getElementById('cancelActionBtn').addEventListener('click',()=>{
+    document.getElementById('actionDialog').close();
+  });
+
+  document.getElementById('saveActionBtn').addEventListener('click',()=>{
+    if(!pendingAction) return;
+    const {type,id}=pendingAction;
+    const s=studentById(id);
+    const amount=Number(document.getElementById('actionAmount').value);
+    if(!s || !Number.isFinite(amount) || amount<0){ alert('Enter a valid amount.'); return; }
+
+    if(type==='deposit'){
+      s.bank += amount;
+      log(id,'deposit',amount);
+    }else if(type==='return'){
+      if(amount>s.cardAmount){ alert('Returned balance cannot be more than the amount on the card.'); return; }
+      const spent=s.cardAmount-amount;
+      s.bank += amount;
+      s.cardOut=false;
+      s.cardAmount=0;
+      log(id,'return',amount,`${fmt(spent)} spent`);
+    }
+
+    document.getElementById('actionDialog').close();
+    pendingAction=null;
+    save();
+  });
+
+  document.getElementById('quickDepositBtn').addEventListener('click',()=>{
+    const id=Number(document.getElementById('quickId').value);
+    const amt=Number(document.getElementById('quickAmount').value);
+    const s=studentById(id);
+    if(!s){ alert('Student number not found.'); return; }
+    if(!Number.isFinite(amt)||amt<0){ alert('Enter a valid deposit amount.'); return; }
+    s.bank+=amt;
+    log(id,'deposit',amt,'Quick deposit');
+    document.getElementById('quickAmount').value='';
+    save();
+  });
+
+  document.getElementById('addStudentBtn').addEventListener('click',()=>{
+    const input=document.getElementById('newStudentNumber');
+    const id=Number(input.value);
+    if(!Number.isInteger(id)||id<1){ alert('Enter a valid student number.'); return; }
+    if(studentById(id)){ alert('That student number is already in the roster.'); return; }
+    data.students.push({id,bank:0,cardOut:false,cardAmount:0});
+    input.value='';
+    save();
+  });
+
+  const setupDialog=document.getElementById('setupDialog');
+
+  function openSetup(){
+    if(data.students.length){
+      const nums=data.students.map(s=>Number(s.id)).filter(Number.isFinite);
+      if(nums.length){
+        const max=Math.max(...nums);
+        document.getElementById('highestNumber').value=max;
+        const present=new Set(nums);
+        const skips=[];
+        for(let n=1;n<=max;n++) if(!present.has(n)) skips.push(n);
+        document.getElementById('skipNumbers').value=skips.join(', ');
+      }
+    }
+    setupDialog.showModal();
+  }
+
+  document.getElementById('setupRosterBtn').addEventListener('click',openSetup);
+  document.getElementById('cancelSetupBtn').addEventListener('click',()=>setupDialog.close());
+
+  document.getElementById('createRosterBtn').addEventListener('click',()=>{
+    const highest=Number(document.getElementById('highestNumber').value);
+    if(!Number.isInteger(highest)||highest<1||highest>200){
+      alert('Enter a highest class number between 1 and 200.');
+      return;
+    }
+
+    const skipsRaw=document.getElementById('skipNumbers').value.trim();
+    const skips=new Set(
+      skipsRaw
+        ? skipsRaw.split(/[, ]+/).map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=highest)
+        : []
+    );
+
+    const ids=[];
+    for(let n=1;n<=highest;n++){
+      if(!skips.has(n)) ids.push(n);
+    }
+
+    if(data.students.length){
+      const ok=confirm('Replace the current roster? Existing balances and transaction history will be cleared.');
+      if(!ok) return;
+    }
+
+    data={students:ids.map(id=>({id,bank:0,cardOut:false,cardAmount:0})),history:[]};
+    setTransferSnapshot(null);
+    save();
+    setupDialog.close();
+  });
+
+  document.getElementById('transferAllPrintBtn').addEventListener('click',()=>{
+    const eligible=data.students.filter(s=>!s.cardOut && Number(s.bank)>0);
+    if(!eligible.length){
+      alert('There are no bank balances available to transfer.');
+      return;
+    }
+
+    const total=eligible.reduce((sum,s)=>sum+Number(s.bank||0),0);
+    const ok=confirm(
+      `Transfer the full bank balance for ${eligible.length} student(s) to debit cards and print them now?\n\n` +
+      `Total being transferred: ${fmt(total)}`
+    );
+    if(!ok) return;
+
+    setTransferSnapshot({
+      savedAt:new Date().toISOString(),
+      data:JSON.parse(JSON.stringify(data))
+    });
+
+    for(const s of eligible){
+      const transferred=Number(s.bank||0);
+      s.bank=0;
+      s.cardOut=true;
+      s.cardAmount=transferred;
+      log(s.id,'transfer',transferred,'Full balance transferred in store batch');
+    }
+
+    save();
+    setTimeout(()=>buildAndPrintCards(),100);
+  });
+
+  document.getElementById('revertTransferBtn').addEventListener('click',()=>{
+    const snapshot=getTransferSnapshot();
+    if(!snapshot || !snapshot.data){
+      updateRevertButton();
+      return;
+    }
+
+    const ok=confirm(
+      'Revert the last Transfer All operation? This restores balances and card statuses to exactly how they were before the transfer.'
+    );
+    if(!ok) return;
+
+    data=snapshot.data;
+    setTransferSnapshot(null);
+    save();
+  });
+
+  document.getElementById('printCardsBtn').addEventListener('click',()=>{
+    buildAndPrintCards();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='husky-bank-backup.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById('importFile').addEventListener('change',async e=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    try{
+      const parsed=JSON.parse(await file.text());
+      if(!Array.isArray(parsed.students)) throw new Error();
+      if(confirm('Replace the current Husky Bank data with this backup?')){
+        data=parsed;
+        setTransferSnapshot(null);
+        save();
+      }
+    }catch(err){ alert('That backup file could not be read.'); }
+    e.target.value='';
+  });
+
+  document.getElementById('resetBtn').addEventListener('click',()=>{
+    if(confirm('Reset all balances, card statuses, and transaction history?')){
+      data={students:data.students.map(s=>({id:s.id,bank:0,cardOut:false,cardAmount:0})),history:[]};
+      setTransferSnapshot(null);
+      save();
+    }
+  });
+
+
+  let qrScanner=null;
+  let activeStoreStudent=null;
+  let scanning=false;
+
+  async function startScanner(){
+    if(typeof Html5Qrcode==='undefined'){
+      alert('The scanner library did not load. Open this from the published GitHub Pages site and try again.');
+      return;
+    }
+    if(scanning) return;
+
+    document.getElementById('storeStudent').style.display='none';
+    document.getElementById('storeMessage').textContent='';
+
+    qrScanner=new Html5Qrcode('reader');
+    try{
+      await qrScanner.start(
+        {facingMode:'environment'},
+        {fps:10, qrbox:{width:240,height:240}},
+        async decodedText=>{
+          if(!decodedText.startsWith('HUSKY:')) return;
+          const id=Number(decodedText.split(':')[1]);
+          const s=studentById(id);
+          if(!s || !s.cardOut){
+            document.getElementById('storeMessage').textContent='That card is not currently active.';
+            return;
+          }
+
+          activeStoreStudent=s;
+          scanning=false;
+          try{ await qrScanner.stop(); }catch(e){}
+          qrScanner.clear();
+
+          document.getElementById('storeStudentId').textContent=`#${s.id}`;
+          document.getElementById('storeCurrentBalance').textContent=fmt(s.cardAmount);
+          document.getElementById('storeRemaining').value=s.cardAmount;
+          document.getElementById('storeStudent').style.display='block';
+          setTimeout(()=>document.getElementById('storeRemaining').select(),100);
+        },
+        ()=>{}
+      );
+      scanning=true;
+    }catch(e){
+      alert('Camera access could not start. Make sure you are using the published HTTPS website and allow camera access.');
+    }
+  }
+
+  async function stopScanner(){
+    if(qrScanner && scanning){
+      try{ await qrScanner.stop(); }catch(e){}
+      try{ qrScanner.clear(); }catch(e){}
+    }
+    scanning=false;
+    qrScanner=null;
+  }
+
+  document.getElementById('storeModeBtn').addEventListener('click',async ()=>{
+    document.getElementById('teacherApp').style.display='none';
+    document.getElementById('storeShell').style.display='block';
+    await startScanner();
+  });
+
+  document.getElementById('exitStoreBtn').addEventListener('click',async ()=>{
+    await stopScanner();
+    document.getElementById('storeShell').style.display='none';
+    document.getElementById('teacherApp').style.display='block';
+    activeStoreStudent=null;
+  });
+
+  document.getElementById('cancelStudentBtn').addEventListener('click',async ()=>{
+    activeStoreStudent=null;
+    document.getElementById('storeStudent').style.display='none';
+    await startScanner();
+  });
+
+  document.getElementById('saveStoreBtn').addEventListener('click',async ()=>{
+    if(!activeStoreStudent) return;
+
+    const remaining=Number(document.getElementById('storeRemaining').value);
+    if(!Number.isFinite(remaining)||remaining<0){
+      alert('Enter a valid remaining balance.');
+      return;
+    }
+    if(remaining>Number(activeStoreStudent.cardAmount)){
+      alert('The remaining balance cannot be more than the current card balance.');
+      return;
+    }
+
+    const before=Number(activeStoreStudent.cardAmount);
+    const spent=before-remaining;
+
+    activeStoreStudent.cardAmount=remaining;
+    log(activeStoreStudent.id,'store',spent,`${fmt(remaining)} remaining on card`);
+    save();
+
+    document.getElementById('storeMessage').textContent=`Saved. ${fmt(remaining)} remains on Student #${activeStoreStudent.id}'s card.`;
+    activeStoreStudent=null;
+    document.getElementById('storeStudent').style.display='none';
+
+    setTimeout(()=>startScanner(),500);
+  });
+
+  render();
+  updateRevertButton();
+  if(!data.students.length) setTimeout(openSetup,100);
+})();
+</script>
+</body>
+</html>
