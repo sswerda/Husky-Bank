@@ -466,6 +466,13 @@
     document.getElementById('actionDialog').close();
   });
 
+  document.getElementById('actionAmount').addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      document.getElementById('saveActionBtn').click();
+    }
+  });
+
   document.getElementById('saveActionBtn').addEventListener('click',()=>{
     if(!pendingAction) return;
     const {type,id}=pendingAction;
